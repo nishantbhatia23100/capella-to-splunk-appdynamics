@@ -2,18 +2,20 @@
 title: "Alert on Couchbase Capella metrics from AppDynamics"
 ---
 
-Capella is a managed database, so you cannot install an AppDynamics agent on its nodes. That raises a practical question: how do you see Capella from AppDynamics, and how do you get an email when a Capella metric crosses a limit? This post shows a setup that works with the Java agent and the Machine Agent, including the common pitfalls. We use CPU as the first test metric; any metric on Capella's metrics endpoint works the same way.
+Capella is a managed database, so you cannot install an AppDynamics agent on its nodes. That raises a practical question: how do you see Capella from AppDynamics, and how do you get an email when a Capella metric crosses a limit? This post shows a setup with an AppDynamics agent in the application and the Machine Agent, including the common pitfalls. We use CPU as the first test metric; any metric on Capella's metrics endpoint works the same way.
+
+**Language note.** Steps 1 and 2 use a Java application, the language we tested. For another language, use that language's Couchbase SDK and AppDynamics agent; only the code differs. Steps 3 to 6 are the same for every language, because they do not touch the application.
 
 ## The idea
 
 Two views, one AppDynamics:
 
-1. **App view.** The Java agent watches your app's calls to Capella: latency, calls per minute and errors.
+1. **App view.** An AppDynamics agent inside your application watches its calls to Capella: latency, calls per minute and errors.
 2. **Cluster metrics.** A small script reads Capella's Prometheus-format `/metrics` endpoint. The metrics to report are listed in one file, `metrics.conf`. The Machine Agent reports them to AppDynamics as custom metrics, and a health rule turns any of them into an email.
 
 ```
-Java app --TLS--> Capella
-   | Java agent
+Your app --TLS--> Capella
+   | AppDynamics agent
    v
 AppDynamics <-- Machine Agent <-- /metrics from every Capella node
    |
@@ -26,23 +28,23 @@ AppDynamics <-- Machine Agent <-- /metrics from every Capella node
 
 - A running Capella cluster: connection string, a database user and password, and your hosts' IPs on the allowed IP list.
 - An AppDynamics SaaS account: controller URL, Account Name and Account Access Key (gear icon, License, Account).
-- A Java application on the Couchbase Java SDK 3.x, and a Linux or macOS host for the Machine Agent.
+- An application that uses a Couchbase SDK (we used Java with the Java SDK 3.x), and a Linux or macOS host for the Machine Agent.
 
 **Downloads**
 
 | What | Where |
 |---|---|
-| AppDynamics Java Agent (ZIP) | AppDynamics Downloads portal, Type: Java Agent |
+| AppDynamics agent for your language (we used the Java Agent ZIP) | AppDynamics Downloads portal, Type: Java Agent |
 | AppDynamics Machine Agent (ZIP) | Same portal, Type: Machine Agent, your OS (bundle with JRE if listed) |
 | Capella root certificate | Capella UI (Connect), or the command in Step 1 |
-| Couchbase Java SDK 3.x | Maven Central, pulled in by your build tool |
+| Couchbase SDK for your language (we used Java SDK 3.x) | Your package manager, for example Maven Central |
 | JDK 8 or newer, Maven or Gradle | Only if not already installed |
 
 **Network:** the app host reaches Capella on TCP 11207 and 18091 to 18096; the Machine Agent host reaches Capella on 18091 and 18093; both reach the controller on 443.
 
 ## Step 1. Connect to Capella over TLS
 
-Capella's certificate chain is rooted in a Couchbase CA that Java and curl do not trust by default. You will see `self signed certificate in certificate chain` until you provide it. Download the root certificate from the Capella UI, or for a quick test extract it:
+Capella's certificate chain is rooted in a Couchbase CA that SDKs and curl do not trust by default. You will see `self signed certificate in certificate chain` until you provide it. Download the root certificate from the Capella UI, or for a quick test extract it:
 
 ```bash
 H=cb.xxxx.cloud.couchbase.com
@@ -63,7 +65,7 @@ Cluster cluster = Cluster.connect("couchbases://cb.xxxx.cloud.couchbase.com",
 
 ## Step 2. See the Capella calls in AppDynamics
 
-Attach the Java agent. The controller host must be a bare hostname with no `https://`:
+Attach the AppDynamics agent (Java shown). The controller host must be a bare hostname with no `https://`:
 
 ```bash
 java -javaagent:/opt/appdynamics/java-agent/javaagent.jar \
@@ -80,7 +82,7 @@ java -javaagent:/opt/appdynamics/java-agent/javaagent.jar \
 
 Check `agent.log` for `Registration information received`. A `401 Unauthorized` means the account name or access key is wrong; copy both from gear, License, Account.
 
-**Trap: 0 calls.** AppDynamics only records Couchbase calls inside a business transaction. Web apps get one per request. A plain Java program has none, so put the work in one method and add a POJO rule (Applications, your app, Configuration, Instrumentation, Transaction Detection, Rules, Add: Custom Match Rule, Java, POJO, class equals your class, method equals `doWork`):
+**Trap: 0 calls.** AppDynamics only records Couchbase calls inside a business transaction. Web apps get one per request. A standalone program has none, so put the work in one method and add a POJO rule (Applications, your app, Configuration, Instrumentation, Transaction Detection, Rules, Add: Custom Match Rule, Java, POJO, class equals your class, method equals `doWork`):
 
 ```java
 public static void doWork(Cluster cluster, Collection col, int i) {   // the unit of work
@@ -208,7 +210,7 @@ CAPELLA_CA_PEM='/opt/appdynamics/machine-agent/capella-root.pem'
 chmod 600 /opt/appdynamics/machine-agent/monitors/CapellaMetrics/capella.env
 ```
 
-Test the script, then start the Machine Agent with the same application, tier and node names as the Java agent:
+Test the script, then start the Machine Agent with the same application, tier and node names as the application's agent:
 
 ```bash
 /opt/appdynamics/machine-agent/monitors/CapellaMetrics/capella-metrics.sh
@@ -295,7 +297,7 @@ Use `max` when high is bad (CPU) and `min` when low is bad (a resident ratio). A
 
 1. Capella's root certificate is not trusted by default.
 2. The controller host must not include `https://`.
-3. A plain Java program shows 0 calls until you add a business transaction.
+3. A standalone program shows 0 calls until you add a business transaction.
 4. The public Capella hostname reports one node, so read every node.
 5. Machine Agent scripts run with an empty environment.
 6. An open violation sends one alert, not a stream.

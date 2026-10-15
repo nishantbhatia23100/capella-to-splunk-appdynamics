@@ -116,18 +116,18 @@ footer b { color: #fff; }
 <div class="hero">
   <div class="eyebrow">Setup guide</div>
   <h1>Monitor Couchbase Capella with AppDynamics</h1>
-  <p>See every call your Java app makes to Capella, and report any Capella metric to AppDynamics so you can alert on it. CPU is the first test metric. Written for a first-time setup, start to finish.</p>
-  <div class="chips"><span>Java application</span><span>Couchbase Capella</span><span>AppDynamics SaaS</span></div>
+  <p>See every call your application makes to Capella, and report any Capella metric to AppDynamics so you can alert on it. CPU is the first test metric. Written for a first-time setup, start to finish.</p>
+  <div class="chips"><span>Your application</span><span>Couchbase Capella</span><span>AppDynamics SaaS</span><span>Example language: Java</span></div>
 </div>
 <div class="page">
 <div class="toc"><a class="c-req" href="#req">Requirements</a><a class="c-p1" href="#p1">1 Connect to Capella</a><a class="c-p2" href="#p2">2 App view</a><a class="c-p3" href="#p3">3 Report metrics</a><a class="c-p4" href="#p4">4 Alert</a><a class="c-p5" href="#p5">5 Test</a><a class="c-p6" href="#p6">6 More metrics</a><a class="c-ts" href="#ts">Troubleshooting</a></div>
 
 <section class="part build"><h2><span class="badge">&#9733;</span>What you will build</h2>
 <div class="cards">
-  <div class="card"><b><span class="n">1</span>Application view</b>Latency, call counts and errors for every call your Java app makes to Capella.</div>
+  <div class="card"><b><span class="n">1</span>Application view</b>Latency, call counts and errors for every call your application makes to Capella.</div>
   <div class="card"><b><span class="n">2</span>Cluster metrics</b>Any Capella metric you choose (CPU, resident ratio, memory...) as an AppDynamics metric, with an email alert. CPU is the first test.</div>
 </div>
-<figure><svg viewBox="0 0 780 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture: Java app with agent, Capella cluster, Machine Agent, AppDynamics controller, health rule, policy and email">
+<figure><svg viewBox="0 0 780 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture: application with agent, Capella cluster, Machine Agent, AppDynamics controller, health rule, policy and email">
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5d6779"/></marker>
     <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#0b5fff"/></marker>
@@ -143,8 +143,8 @@ footer b { color: #fff; }
   </style>
   <!-- Java app -->
   <rect x="20" y="20" width="230" height="76" rx="12" fill="url(#g1)"/>
-  <text class="t" x="38" y="50">Your Java application</text>
-  <text class="s" x="38" y="70">+ AppDynamics Java agent</text>
+  <text class="t" x="38" y="50">Your application</text>
+  <text class="s" x="38" y="70">+ AppDynamics agent (Java example)</text>
   <!-- Capella -->
   <rect x="530" y="20" width="230" height="76" rx="12" fill="#0b5fff"/>
   <text class="t" x="548" y="50">Couchbase Capella</text>
@@ -181,7 +181,7 @@ footer b { color: #fff; }
   <path d="M390 243 L245 283" fill="none" stroke="#0b5fff" stroke-width="2" marker-end="url(#b)"/>
 </svg>
 <figcaption>How the pieces fit together</figcaption></figure>
-<div class="note">Capella is managed, so you cannot install an agent on its nodes. The Java agent watches your app's calls. The Machine Agent reads Capella's own metrics endpoint.</div>
+<div class="note">Capella is managed, so you cannot install an agent on its nodes. An AppDynamics agent inside your application watches its calls. The Machine Agent reads Capella's own metrics endpoint.</div>
 
 </section><section class="part req"><h2 id="req"><span class="badge">&#9776;</span>Requirements: what you need and what to download</h2>
 <p>Collect everything in this section first. Nothing here is installed yet.</p>
@@ -192,17 +192,17 @@ footer b { color: #fff; }
 <tr><td>Capella cluster</td><td>A running cluster with a bucket, its connection string (<code>couchbases://cb.xxxx.cloud.couchbase.com</code>), and a database user and password. The public IP of every host in this guide must be on the cluster's <b>allowed IP list</b> (Capella: cluster, Settings).</td></tr>
 <tr><td>Metrics user</td><td>A database user that can read cluster metrics. If you get <code>401</code> or <code>403</code> in Part 3, use a user with a monitoring-capable role.</td></tr>
 <tr><td>AppDynamics SaaS account</td><td>Controller URL (<code>YOURNAME.saas.appdynamics.com</code>), plus the <b>Account Name</b> and <b>Account Access Key</b>. In the controller click the gear icon, then License, then the Account section. A login to the AppDynamics Downloads portal is needed for the agents below.</td></tr>
-<tr><td>Java application</td><td>Java 8 or newer, using the Couchbase Java SDK 3.x. Any app that talks to Capella works; a plain <code>main()</code> program needs the extra step in Part 2.2.</td></tr>
+<tr><td>Application</td><td>Any application that uses a Couchbase SDK. The examples in Parts 1 and 2 use <b>Java</b> (Java 8 or newer, Couchbase Java SDK 3.x), the language this setup was tested with.</td></tr>
 <tr><td>Hosts</td><td>The host that runs your app, and a Linux or macOS host for the Machine Agent (it can be the same machine).</td></tr>
 </table>
 
 <h3>Downloads</h3>
 <table>
 <tr><th style="width:26%">What</th><th>Where to get it</th><th style="width:12%">Used in</th></tr>
-<tr><td>AppDynamics <b>Java Agent</b> (ZIP)</td><td>AppDynamics Downloads portal. Sign in, set <b>Type</b> to <i>Java Agent</i>, pick the latest version, download the ZIP. (The Getting Started wizard in the controller also offers it.)</td><td>Part 2</td></tr>
+<tr><td>AppDynamics <b>Java Agent</b> (ZIP)</td><td>AppDynamics Downloads portal. Sign in, set <b>Type</b> to <i>Java Agent</i>, pick the latest version, download the ZIP. (The Getting Started wizard in the controller also offers it.) Needed for the Java example; other languages use their own agent from the same portal.</td><td>Part 2</td></tr>
 <tr><td>AppDynamics <b>Machine Agent</b> (ZIP)</td><td>Same portal. Set <b>Type</b> to <i>Machine Agent</i>, filter <b>Operating System</b> to yours, download the ZIP. Choose the bundle that includes a JRE if one is listed; otherwise the plain ZIP needs Java 8 or newer on that host.</td><td>Part 3</td></tr>
 <tr><td>Capella <b>root certificate</b></td><td>Capella UI (Connect section), or extract it with the command in Part 1.1.</td><td>Parts 1, 3</td></tr>
-<tr><td>Couchbase <b>Java SDK</b> 3.x</td><td>Maven Central. Your build tool downloads it from the dependency in Part 1.3.</td><td>Part 1</td></tr>
+<tr><td>Couchbase <b>SDK</b> for your language</td><td>Your language's package manager. For the Java example it is the Java SDK 3.x from Maven Central, pulled in by the dependency in Part 1.3.</td><td>Part 1</td></tr>
 <tr><td><b>JDK</b> 8 or newer</td><td>Only if not already installed, for example Eclipse Temurin from adoptium.net.</td><td>Parts 1 to 3</td></tr>
 <tr><td><b>Maven</b> or Gradle</td><td>Only if you build the application yourself (maven.apache.org).</td><td>Part 1</td></tr>
 </table>
@@ -236,7 +236,7 @@ footer b { color: #fff; }
 <table>
 <tr><th style="width:24%">Term</th><th>What it means here</th></tr>
 <tr><td>Application</td><td>The top-level container for one system you monitor. We use <code>capella-demo</code>. Set with <code>applicationName</code>.</td></tr>
-<tr><td>Tier</td><td>A group of nodes that do the same job. We use <code>capella-client</code> for your Java app. Set with <code>tierName</code>.</td></tr>
+<tr><td>Tier</td><td>A group of nodes that do the same job. We use <code>capella-client</code> for your application. Set with <code>tierName</code>.</td></tr>
 <tr><td>Node</td><td>One monitored running process: one instance of your app, or one Machine Agent. We use <code>node1</code>. Set with <code>nodeName</code>. Both agents use the same application, tier and node names so their data lands together.</td></tr>
 <tr><td>Business transaction</td><td>One unit of work, such as a web request or your <code>doWork</code> method. Couchbase calls are recorded inside it.</td></tr>
 <tr><td>Backend</td><td>An external system your app calls. Capella appears as a Couchbase backend on the flow map.</td></tr>
@@ -246,7 +246,8 @@ footer b { color: #fff; }
 <div class="warn"><b>Two different "nodes".</b> A <i>Capella node</i> is a database server. An <i>AppDynamics node</i> is a monitored process, here your app or the Machine Agent. Capella metrics describe the Capella servers, but they are stored under the AppDynamics node <code>node1</code>.</div>
 
 </section><section class="part p1"><h2 id="p1"><span class="badge">1</span>Connect your app to Capella over TLS</h2>
-<p>Capella uses a certificate chain rooted in a Couchbase CA that Java and curl do not trust by default.</p>
+<div class="note"><b>Languages.</b> The code in Parts 1 and 2 uses a <b>Java</b> application, the language this setup was tested with. For another language, use that language's Couchbase SDK and AppDynamics agent; the steps are the same and only the code differs. <b>Parts 3 to 6 are identical for every language</b>, because they do not touch the application.</div>
+<p>Capella uses a certificate chain rooted in a Couchbase CA that SDKs and curl do not trust by default.</p>
 <h3>1.1 Get the root certificate</h3>
 <p>Download the cluster's root certificate from the Capella UI (Connect section), or extract it from the server as below. Keep a copy next to your app and one at <code>/opt/appdynamics/machine-agent/capella-root.pem</code> (Part 3 uses it).</p>
 <pre class="short" data-lang="bash"><code>H=cb.xxxx.cloud.couchbase.com
@@ -270,7 +271,7 @@ Cluster cluster = Cluster.connect(<span class="s">"couchbases://cb.xxxx.cloud.co
 <p class="check">Done when: your app connects and reads or writes a document.</p>
 
 </section><section class="part p2"><h2 id="p2"><span class="badge">2</span>See your app's Capella calls in AppDynamics</h2>
-<h3>2.1 Attach the Java agent</h3>
+<h3>2.1 Attach the AppDynamics agent (Java example)</h3>
 <p>Unzip the Java Agent ZIP, then start your app with these flags:</p>
 <pre class="short" data-lang="bash"><code>unzip AppServerAgent-*.zip <span class="f">-d</span> /opt/appdynamics/java-agent</code></pre>
 <pre class="short" data-lang="bash"><code>java <span class="f">-javaagent:/opt/appdynamics/java-agent/javaagent.jar</span> \
@@ -285,8 +286,9 @@ Cluster cluster = Cluster.connect(<span class="s">"couchbases://cb.xxxx.cloud.co
   <span class="f">-jar</span> your-app.jar</code></pre>
 <div class="warn"><b>Common mistakes.</b> The host must be the bare hostname (no <code>https://</code>). The account name and key come from the License page. A <code>401 Unauthorized</code> in <code>java-agent/ver*/logs/*/agent.log</code> means one of them is wrong.</div>
 <p class="check">Done when: the agent log shows <code>Registration information received</code>, and the application appears under Applications in the controller.</p>
-<h3>2.2 Standalone programs only: create a business transaction</h3>
-<p>AppDynamics only records Couchbase calls inside a business transaction. Web applications get one automatically from each request. A plain Java program has no entry point, so the application shows 0 calls until you define one. Put the work in one method:</p>
+<div class="note">AppDynamics documents automatic Couchbase detection for its Java agent. For another language, check that the Flow Map (below) shows a Couchbase backend once the app makes calls.</div>
+<h3>2.2 Standalone programs only: create a business transaction (Java example)</h3>
+<p>AppDynamics only records Couchbase calls inside a business transaction. Web applications get one automatically from each request. A standalone program has no entry point, so the application shows 0 calls until you define one. Put the work in one method:</p>
 <pre class="short" data-lang="java"><code><span class="k">public</span> <span class="k">static</span> <span class="k">void</span> doWork(Cluster cluster, Collection col, int i) {   <span class="c">// the unit of work</span>
     col.upsert(<span class="s">"doc::"</span> + i, JsonObject.create().put(<span class="s">"i"</span>, i));
     col.get(<span class="s">"doc::"</span> + i);
@@ -397,7 +399,7 @@ CAPELLA_CA_PEM=<span class="s">'/opt/appdynamics/machine-agent/capella-root.pem'
 <h3>3.4 Test the script, then start the Machine Agent</h3>
 <pre class="short" data-lang="bash"><code>/opt/appdynamics/machine-agent/monitors/CapellaMetrics/capella-metrics.sh
 <span class="c"># name=Custom Metrics|Capella|CPU Utilization %,value=9,aggregator=OBSERVATION,time-rollup=CURRENT,cluster-rollup=INDIVIDUAL</span></code></pre>
-<p>Start the Machine Agent. Use the <b>same application, tier and node names</b> as the Java agent so the metrics land under your application:</p>
+<p>Start the Machine Agent. Use the <b>same application, tier and node names</b> as your application's AppDynamics agent so the metrics land under your application:</p>
 <pre class="short" data-lang="bash"><code>java <span class="f">-Dappdynamics.controller.hostName=YOURNAME.saas.appdynamics.com</span> \
   <span class="f">-Dappdynamics.controller.port=443</span> <span class="f">-Dappdynamics.controller.ssl.enabled=true</span> \
   <span class="f">-Dappdynamics.agent.accountName=ACCOUNT_NAME</span> \
@@ -525,7 +527,7 @@ Resident Ratio travel-sample %<span class="pp">|</span>REPLACE_WITH_METRIC_NAME<
 </section><section class="part ts"><h2 id="ts"><span class="badge">!</span>Troubleshooting</h2>
 <table>
 <tr><th style="width:30%">Symptom</th><th style="width:30%">Cause</th><th>Fix</th></tr>
-<tr><td>curl or Java: <i>self signed certificate in certificate chain</i></td><td>The Capella root CA is not trusted by default.</td><td>Use <code>--cacert capella-root.pem</code> and the SDK <code>trustCertificate</code> setting.</td></tr><tr><td>Agent log: <i>401 Unauthorized</i></td><td>Wrong account name or access key.</td><td>Copy both from the controller: gear, License, Account. Re-type the key; check for stray spaces.</td></tr><tr><td>Agent log shows <code>hostName=https://...</code></td><td>Scheme included in the controller host.</td><td>Use the bare hostname, no <code>https://</code>.</td></tr><tr><td>Application visible, 0 calls, no Couchbase backend</td><td>A plain Java program has no business transaction entry point.</td><td>Add the POJO rule in Part 2 (not needed for web apps).</td></tr><tr><td>Metrics never appear</td><td>The monitor script runs with an empty environment, so it cannot see exported variables.</td><td>Put the credentials in <code>capella.env</code> next to the script (Part 3).</td></tr><tr><td>One metric is missing</td><td>The metric name in <code>metrics.conf</code> does not match exactly.</td><td>Search the endpoint again (Part 6) and copy the name from the output.</td></tr><tr><td>A value in AppDynamics is lower or higher than Capella shows</td><td>The public hostname answers <code>/metrics</code> from one node only.</td><td>Use the script in this guide: it lists every node and combines them with max, min, avg or sum.</td></tr><tr><td>Health rule never fires</td><td>Wrong entity or metric path.</td><td>Affect the node, choose the metric by relative path, and set "no data" to Critical while testing.</td></tr><tr><td>Alert emailed once, then nothing more</td><td>A violation stays open while CPU stays high, and the policy triggers on <i>Started</i> only.</td><td>Expected. To hear again, add <i>Violation Continues</i> to the policy trigger, or let the violation clear and re-test.</td></tr><tr><td>Alert emails go to the wrong people</td><td>Extra recipients on the email action.</td><td>Edit the action under Alert &amp; Respond, Actions.</td></tr>
+<tr><td>curl or Java: <i>self signed certificate in certificate chain</i></td><td>The Capella root CA is not trusted by default.</td><td>Use <code>--cacert capella-root.pem</code> and the SDK <code>trustCertificate</code> setting.</td></tr><tr><td>Agent log: <i>401 Unauthorized</i></td><td>Wrong account name or access key.</td><td>Copy both from the controller: gear, License, Account. Re-type the key; check for stray spaces.</td></tr><tr><td>Agent log shows <code>hostName=https://...</code></td><td>Scheme included in the controller host.</td><td>Use the bare hostname, no <code>https://</code>.</td></tr><tr><td>Application visible, 0 calls, no Couchbase backend</td><td>A standalone program (no web requests) has no business transaction entry point.</td><td>Add the POJO rule in Part 2 (not needed for web apps).</td></tr><tr><td>Metrics never appear</td><td>The monitor script runs with an empty environment, so it cannot see exported variables.</td><td>Put the credentials in <code>capella.env</code> next to the script (Part 3).</td></tr><tr><td>One metric is missing</td><td>The metric name in <code>metrics.conf</code> does not match exactly.</td><td>Search the endpoint again (Part 6) and copy the name from the output.</td></tr><tr><td>A value in AppDynamics is lower or higher than Capella shows</td><td>The public hostname answers <code>/metrics</code> from one node only.</td><td>Use the script in this guide: it lists every node and combines them with max, min, avg or sum.</td></tr><tr><td>Health rule never fires</td><td>Wrong entity or metric path.</td><td>Affect the node, choose the metric by relative path, and set "no data" to Critical while testing.</td></tr><tr><td>Alert emailed once, then nothing more</td><td>A violation stays open while CPU stays high, and the policy triggers on <i>Started</i> only.</td><td>Expected. To hear again, add <i>Violation Continues</i> to the policy trigger, or let the violation clear and re-test.</td></tr><tr><td>Alert emails go to the wrong people</td><td>Extra recipients on the email action.</td><td>Edit the action under Alert &amp; Respond, Actions.</td></tr>
 </table>
 
 </section><section class="part good"><h2><span class="badge">i</span>Good to know</h2>
