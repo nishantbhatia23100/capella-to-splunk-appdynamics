@@ -1,0 +1,17 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo</groupId><artifactId>capella-appd</artifactId><version>1.0</version>
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source><maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <mainClass>demo.CapellaLoad</mainClass>
+  </properties>
+  <dependencies>
+    <dependency><groupId>com.couchbase.client</groupId><artifactId>java-client</artifactId><version>3.7.5</version></dependency>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-simple</artifactId><version>1.7.36</version></dependency>
+  </dependencies>
+  <build><plugins><plugin>
+    <groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.1.0</version>
+    <configuration><mainClass>${mainClass}</mainClass></configuration>
+  </plugin></plugins></build>
+</project>

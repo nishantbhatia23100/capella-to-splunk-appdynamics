@@ -1,0 +1,14 @@
+.env
+appdynamics-agent/
+target/
+capella-root.pem
+tools/
+machine-agent/
+AppServerAgent-*/
+MachineAgent-*/
+run.log
+*.log
+capella.env
+capella.nodes
+~$*
+.DS_Store

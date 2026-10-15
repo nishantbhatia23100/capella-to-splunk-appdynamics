@@ -1,0 +1,21 @@
+<monitor>
+  <name>CapellaMetrics</name>
+  <type>managed</type>
+  <description>Reports Capella metrics from the Prometheus /metrics endpoint</description>
+  <monitor-configuration></monitor-configuration>
+  <monitor-run-task>
+    <execution-style>periodic</execution-style>
+    <execution-frequency-in-seconds>60</execution-frequency-in-seconds>
+    <name>Capella Metrics</name>
+    <display-name>Capella Metrics</display-name>
+    <description>Capella metrics</description>
+    <type>executable</type>
+    <execution-timeout-in-secs>60</execution-timeout-in-secs>
+    <task-arguments></task-arguments>
+    <executable-task>
+      <type>file</type>
+      <file os-type="linux">capella-metrics.sh</file>
+      <file os-type="mac">capella-metrics.sh</file>
+    </executable-task>
+  </monitor-run-task>
+</monitor>

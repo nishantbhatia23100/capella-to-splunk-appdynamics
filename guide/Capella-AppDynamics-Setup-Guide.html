@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor Couchbase Capella with AppDynamics: Setup Guide</title>
+<style>
+@page { size: Letter; margin: 14mm 14mm 16mm;
+  @bottom-center { content: counter(page); font: 8.5pt -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #8a93a6; } }
+:root { --ink:#172033; --muted:#5d6779; --line:#e1e6ef; --navy:#0b1a3a; --blue:#2563eb; --green:#15803d; --amber:#b45309; --code:#0f172a; --c:#2563eb; --t:#eaf1ff; --d:#1d4ed8; }
+* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+html { overflow-y: auto; background: radial-gradient(1200px 500px at 50% -120px, #dbe6ff 0%, #eef2fb 55%, #f6f8fc 100%) fixed; scroll-behavior: smooth; }
+body { font: 10.4pt/1.6 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--ink); max-width: 900px; margin: 28px auto 48px; background: #fff; border-radius: 18px; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 18px 50px rgba(15,23,42,.14); }
+.page { padding: 0 40px 0; }
+
+/* ---------- hero ---------- */
+.hero { position: relative; overflow: hidden; border-radius: 18px 18px 0 0; color: #fff; padding: 44px 40px 36px; background:
+  radial-gradient(520px 260px at 92% -10%, rgba(125,211,252,.45), transparent 60%),
+  radial-gradient(420px 260px at 8% 120%, rgba(167,139,250,.40), transparent 60%),
+  linear-gradient(135deg, #0b1a3a 0%, #14337f 55%, #2563eb 100%); }
+.hero::after { content: ""; position: absolute; right: -60px; bottom: -80px; width: 260px; height: 260px; border-radius: 50%; border: 36px solid rgba(255,255,255,.07); }
+.eyebrow { display: inline-block; font-size: 8.4pt; letter-spacing: .18em; font-weight: 800; color: #0b1a3a; background: #7dd3fc; text-transform: uppercase; padding: 3px 11px; border-radius: 999px; }
+.hero h1 { font-size: 28pt; line-height: 1.1; margin: 14px 0 12px; font-weight: 800; letter-spacing: -.02em; max-width: 680px; }
+.hero p { margin: 0 0 18px; color: #d6e3ff; font-size: 11.2pt; max-width: 640px; }
+.chips span { display: inline-block; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 4px 13px; font-size: 8.8pt; margin: 0 7px 5px 0; color: #fff; font-weight: 600; }
+.chips span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; background: #7dd3fc; }
+.chips span:nth-child(2)::before { background: #fda4af; }
+.chips span:nth-child(3)::before { background: #86efac; }
+
+/* ---------- sticky contents ---------- */
+.toc { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 6px 7px; margin: 0 -40px; padding: 11px 40px; background: rgba(255,255,255,.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.toc a { text-decoration: none; font-size: 8.6pt; font-weight: 700; padding: 3px 11px; border-radius: 999px; color: var(--d); background: var(--t); border: 1px solid transparent; }
+.toc a:hover { border-color: var(--c); }
+.c-req { --d:#334155; --t:#eef1f6; } .c-p1 { --d:#1d4ed8; --t:#eaf1ff; } .c-p2 { --d:#6d28d9; --t:#f1eaff; } .c-p3 { --d:#0e7490; --t:#e1f6fb; }
+.c-p4 { --d:#c2410c; --t:#ffeee2; } .c-p5 { --d:#15803d; --t:#e3f7ea; } .c-p6 { --d:#be185d; --t:#fde7f1; } .c-ts { --d:#b45309; --t:#fff3d6; }
+
+/* ---------- sections with their own accent colour ---------- */
+section.part { margin: 0; padding: 6px 0 14px; }
+.build, .good { --c:#334155; --t:#eef1f6; --d:#1e293b; }
+.req   { --c:#334155; --t:#eef1f6; --d:#1e293b; }
+.terms { --c:#475569; --t:#f0f3f8; --d:#334155; }
+.p1 { --c:#2563eb; --t:#eaf1ff; --d:#1d4ed8; }
+.p2 { --c:#7c3aed; --t:#f1eaff; --d:#6d28d9; }
+.p3 { --c:#0891b2; --t:#e1f6fb; --d:#0e7490; }
+.p4 { --c:#ea580c; --t:#ffeee2; --d:#c2410c; }
+.p5 { --c:#16a34a; --t:#e3f7ea; --d:#15803d; }
+.p6 { --c:#db2777; --t:#fde7f1; --d:#be185d; }
+.ts { --c:#d97706; --t:#fff3d6; --d:#b45309; }
+
+h2 { font-size: 16pt; margin: 34px 0 10px; padding: 0 0 9px; display: flex; align-items: center; gap: 12px; break-after: avoid; letter-spacing: -.01em; border-bottom: 3px solid var(--t); position: relative; }
+h2::after { content: ""; position: absolute; left: 0; bottom: -3px; width: 90px; height: 3px; background: var(--c); border-radius: 3px; }
+.badge { flex: none; width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, var(--c), var(--d)); color: #fff; font-size: 13pt; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px color-mix(in srgb, var(--c) 40%, transparent); }
+h3 { font-size: 11.2pt; margin: 20px 0 5px; color: var(--d); break-after: avoid; display: flex; align-items: center; gap: 8px; }
+h3::before { content: ""; width: 5px; height: 15px; background: var(--c); border-radius: 3px; flex: none; }
+p, li { margin: 5px 0; }
+ul, ol { padding-left: 24px; }
+li::marker { color: var(--c); font-weight: 800; }
+a { color: var(--blue); }
+
+/* ---------- code ---------- */
+pre { position: relative; background: var(--code); color: #e6edf7; border-radius: 10px; padding: 26px 16px 12px 16px; font: 8.5pt/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; margin: 9px 0 16px; border: 1px solid #1d2a4a; border-left: 4px solid var(--c); box-shadow: 0 6px 16px rgba(15,23,42,.14); }
+pre::before { content: attr(data-lang); position: absolute; top: 7px; left: 16px; font: 800 6.8pt -apple-system, "Segoe UI", Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--c); filter: brightness(1.35); }
+pre::after { content: ""; position: absolute; top: 9px; right: 44px; width: 8px; height: 8px; border-radius: 50%; background: #f87171; box-shadow: 14px 0 0 #fbbf24, 28px 0 0 #4ade80; opacity: .85; }
+pre.short { break-inside: avoid; }
+pre code { background: none; padding: 0; color: inherit; font: inherit; border: none; }
+pre .c { color: #7f93b8; font-style: italic; } pre .s { color: #f9c36b; } pre .v { color: #c4b5fd; } pre .f { color: #7dd3fc; }
+pre .k { color: #f472b6; } pre .tg { color: #7dd3fc; } pre .pp { color: #f9c36b; font-weight: 700; }
+code { font: .92em ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--t); color: var(--d); padding: 1px 6px; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--c) 18%, transparent); }
+
+/* ---------- tables ---------- */
+table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 10px 0 18px; font-size: 9.5pt; border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 10px; overflow: hidden; }
+th { background: var(--t); color: var(--d); text-align: left; font-weight: 800; font-size: 8.8pt; text-transform: uppercase; letter-spacing: .05em; }
+th, td { padding: 8px 12px; vertical-align: top; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) td { background: #fafbfd; }
+tr { break-inside: avoid; }
+td:first-child { font-weight: 600; color: var(--ink); }
+
+/* ---------- callouts ---------- */
+.note, .warn { position: relative; border-radius: 10px; padding: 11px 15px 11px 48px; margin: 13px 0; break-inside: avoid; }
+.note { background: var(--t); border: 1px solid color-mix(in srgb, var(--c) 28%, white); }
+.warn { background: #fff4dc; border: 1px solid #f3d18b; }
+.note::before, .warn::before { position: absolute; left: 14px; top: 11px; width: 23px; height: 23px; border-radius: 50%; color: #fff; font-weight: 800; font-size: 11pt; text-align: center; line-height: 23px; }
+.note::before { content: "i"; background: var(--c); }
+.warn::before { content: "!"; background: #d97706; }
+.check { display: inline-block; background: #e3f7ea; color: var(--green); border: 1px solid #b6e3c6; border-radius: 999px; padding: 3px 14px 3px 10px; font-weight: 700; font-size: 9.2pt; margin: 5px 0 12px; }
+.check::before { content: "\2713"; margin-right: 7px; font-weight: 900; }
+
+/* ---------- overview ---------- */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0 10px; }
+.card { border: 1px solid var(--line); border-radius: 13px; padding: 14px 17px; background: #fff; box-shadow: 0 4px 14px rgba(15,23,42,.06); border-top: 4px solid var(--blue); }
+.card:nth-child(2) { border-top-color: #0891b2; }
+.card b { color: var(--navy); display: block; margin-bottom: 3px; font-size: 11pt; }
+.card .n { display: inline-flex; width: 24px; height: 24px; border-radius: 8px; background: var(--blue); color: #fff; align-items: center; justify-content: center; font-size: 10pt; font-weight: 800; margin-right: 9px; }
+.card:nth-child(2) .n { background: #0891b2; }
+figure { margin: 14px 0 8px; border: 1px solid var(--line); border-radius: 13px; padding: 12px; background: linear-gradient(#fbfcff, #f4f7fd); break-inside: avoid; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { text-align: center; color: var(--muted); font-size: 8.8pt; margin-top: 4px; }
+footer { color: #cbd5e6; font-size: 8.8pt; border-radius: 0 0 18px 18px; margin: 38px -40px 0; padding: 18px 40px; background: linear-gradient(135deg, #0b1a3a, #14337f); }
+footer b { color: #fff; }
+@media print {
+  html { background: #fff; }
+  body { max-width: none; margin: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+  .hero { margin: 0; border-radius: 14px; padding: 26px 28px 20px; }
+  .hero h1 { font-size: 23pt; margin: 10px 0 8px; }
+  .hero p { font-size: 10.4pt; margin-bottom: 12px; }
+  .page { padding: 0; }
+  .toc { position: static; margin: 10px 0 0; padding: 8px 0; background: none; backdrop-filter: none; border-bottom: none; }
+  section.part { padding-top: 0; }
+  h2 { margin-top: 24px; }
+  figure { padding: 8px; }
+  figure svg { max-height: 250px; }
+  footer { margin: 26px 0 0; padding: 16px 22px; border-radius: 12px; }
+}
+
+</style></head><body>
+
+<div class="hero">
+  <div class="eyebrow">Setup guide</div>
+  <h1>Monitor Couchbase Capella with AppDynamics</h1>
+  <p>See every call your Java app makes to Capella, and report any Capella metric to AppDynamics so you can alert on it. CPU is the first test metric. Written for a first-time setup, start to finish.</p>
+  <div class="chips"><span>Java application</span><span>Couchbase Capella</span><span>AppDynamics SaaS</span></div>
+</div>
+<div class="page">
+<div class="toc"><a class="c-req" href="#req">Requirements</a><a class="c-p1" href="#p1">1 Connect to Capella</a><a class="c-p2" href="#p2">2 App view</a><a class="c-p3" href="#p3">3 Report metrics</a><a class="c-p4" href="#p4">4 Alert</a><a class="c-p5" href="#p5">5 Test</a><a class="c-p6" href="#p6">6 More metrics</a><a class="c-ts" href="#ts">Troubleshooting</a></div>
+
+<section class="part build"><h2><span class="badge">&#9733;</span>What you will build</h2>
+<div class="cards">
+  <div class="card"><b><span class="n">1</span>Application view</b>Latency, call counts and errors for every call your Java app makes to Capella.</div>
+  <div class="card"><b><span class="n">2</span>Cluster metrics</b>Any Capella metric you choose (CPU, resident ratio, memory...) as an AppDynamics metric, with an email alert. CPU is the first test.</div>
+</div>
+<figure><svg viewBox="0 0 780 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture: Java app with agent, Capella cluster, Machine Agent, AppDynamics controller, health rule, policy and email">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5d6779"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#0b5fff"/></marker>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1a3a"/><stop offset="1" stop-color="#12337a"/></linearGradient>
+  </defs>
+  <style>
+    text { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+    .t { font-size: 14px; font-weight: 700; fill: #fff; }
+    .s { font-size: 11.5px; fill: #cfdcff; }
+    .tl { font-size: 14px; font-weight: 700; fill: #18202f; }
+    .sl { font-size: 11.5px; fill: #5d6779; }
+    .lab { font-size: 11px; fill: #5d6779; font-style: italic; }
+  </style>
+  <!-- Java app -->
+  <rect x="20" y="20" width="230" height="76" rx="12" fill="url(#g1)"/>
+  <text class="t" x="38" y="50">Your Java application</text>
+  <text class="s" x="38" y="70">+ AppDynamics Java agent</text>
+  <!-- Capella -->
+  <rect x="530" y="20" width="230" height="76" rx="12" fill="#0b5fff"/>
+  <text class="t" x="548" y="50">Couchbase Capella</text>
+  <text class="s" x="548" y="70" fill="#dce8ff">cluster nodes, /metrics endpoint</text>
+  <line x1="252" y1="58" x2="528" y2="58" stroke="#5d6779" stroke-width="2" marker-end="url(#a)"/>
+  <text class="lab" x="390" y="50" text-anchor="middle">SDK calls over TLS</text>
+  <!-- Controller -->
+  <rect x="275" y="165" width="230" height="76" rx="12" fill="url(#g1)"/>
+  <text class="t" x="293" y="195">AppDynamics controller</text>
+  <text class="s" x="293" y="215">SaaS: metrics, flow map, alerts</text>
+  <path d="M135 98 L135 130 L275 195" fill="none" stroke="#0b5fff" stroke-width="2" marker-end="url(#b)"/>
+  <text class="lab" x="147" y="122">calls, latency, errors</text>
+  <!-- Machine Agent -->
+  <rect x="530" y="165" width="230" height="76" rx="12" fill="#eef3ff" stroke="#9db9f5" stroke-width="1.5"/>
+  <text class="tl" x="548" y="195">Machine Agent</text>
+  <text class="sl" x="548" y="215">runs capella-metrics.sh every minute</text>
+  <path d="M645 98 L645 163" fill="none" stroke="#5d6779" stroke-width="2" marker-end="url(#a)"/>
+  <text class="lab" x="635" y="135" text-anchor="end">reads /metrics of every node</text>
+  <line x1="528" y1="203" x2="507" y2="203" stroke="#0b5fff" stroke-width="2" marker-end="url(#b)"/>
+  <text class="lab" x="640" y="262" text-anchor="middle">custom metrics to controller</text>
+  <!-- chain -->
+  <rect x="150" y="285" width="190" height="52" rx="10" fill="#fff" stroke="#c9d3e6" stroke-width="1.5"/>
+  <text class="tl" x="245" y="308" text-anchor="middle">Health rule</text>
+  <text class="sl" x="245" y="326" text-anchor="middle">metric above or below a limit</text>
+  <rect x="365" y="285" width="150" height="52" rx="10" fill="#fff" stroke="#c9d3e6" stroke-width="1.5"/>
+  <text class="tl" x="440" y="308" text-anchor="middle">Policy</text>
+  <text class="sl" x="440" y="326" text-anchor="middle">capella-alerts</text>
+  <rect x="540" y="285" width="150" height="52" rx="10" fill="#e8f7ee" stroke="#9fd8b5" stroke-width="1.5"/>
+  <text class="tl" x="615" y="308" text-anchor="middle">Email alert</text>
+  <text class="sl" x="615" y="326" text-anchor="middle">action on violation</text>
+  <line x1="342" y1="311" x2="363" y2="311" stroke="#5d6779" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="517" y1="311" x2="538" y2="311" stroke="#5d6779" stroke-width="2" marker-end="url(#a)"/>
+  <!-- note: controller feeds the health rule -->
+  <path d="M390 243 L245 283" fill="none" stroke="#0b5fff" stroke-width="2" marker-end="url(#b)"/>
+</svg>
+<figcaption>How the pieces fit together</figcaption></figure>
+<div class="note">Capella is managed, so you cannot install an agent on its nodes. The Java agent watches your app's calls. The Machine Agent reads Capella's own metrics endpoint.</div>
+
+</section><section class="part req"><h2 id="req"><span class="badge">&#9776;</span>Requirements: what you need and what to download</h2>
+<p>Collect everything in this section first. Nothing here is installed yet.</p>
+
+<h3>Accounts and access</h3>
+<table>
+<tr><th style="width:30%">You need</th><th>Details</th></tr>
+<tr><td>Capella cluster</td><td>A running cluster with a bucket, its connection string (<code>couchbases://cb.xxxx.cloud.couchbase.com</code>), and a database user and password. The public IP of every host in this guide must be on the cluster's <b>allowed IP list</b> (Capella: cluster, Settings).</td></tr>
+<tr><td>Metrics user</td><td>A database user that can read cluster metrics. If you get <code>401</code> or <code>403</code> in Part 3, use a user with a monitoring-capable role.</td></tr>
+<tr><td>AppDynamics SaaS account</td><td>Controller URL (<code>YOURNAME.saas.appdynamics.com</code>), plus the <b>Account Name</b> and <b>Account Access Key</b>. In the controller click the gear icon, then License, then the Account section. A login to the AppDynamics Downloads portal is needed for the agents below.</td></tr>
+<tr><td>Java application</td><td>Java 8 or newer, using the Couchbase Java SDK 3.x. Any app that talks to Capella works; a plain <code>main()</code> program needs the extra step in Part 2.2.</td></tr>
+<tr><td>Hosts</td><td>The host that runs your app, and a Linux or macOS host for the Machine Agent (it can be the same machine).</td></tr>
+</table>
+
+<h3>Downloads</h3>
+<table>
+<tr><th style="width:26%">What</th><th>Where to get it</th><th style="width:12%">Used in</th></tr>
+<tr><td>AppDynamics <b>Java Agent</b> (ZIP)</td><td>AppDynamics Downloads portal. Sign in, set <b>Type</b> to <i>Java Agent</i>, pick the latest version, download the ZIP. (The Getting Started wizard in the controller also offers it.)</td><td>Part 2</td></tr>
+<tr><td>AppDynamics <b>Machine Agent</b> (ZIP)</td><td>Same portal. Set <b>Type</b> to <i>Machine Agent</i>, filter <b>Operating System</b> to yours, download the ZIP. Choose the bundle that includes a JRE if one is listed; otherwise the plain ZIP needs Java 8 or newer on that host.</td><td>Part 3</td></tr>
+<tr><td>Capella <b>root certificate</b></td><td>Capella UI (Connect section), or extract it with the command in Part 1.1.</td><td>Parts 1, 3</td></tr>
+<tr><td>Couchbase <b>Java SDK</b> 3.x</td><td>Maven Central. Your build tool downloads it from the dependency in Part 1.3.</td><td>Part 1</td></tr>
+<tr><td><b>JDK</b> 8 or newer</td><td>Only if not already installed, for example Eclipse Temurin from adoptium.net.</td><td>Parts 1 to 3</td></tr>
+<tr><td><b>Maven</b> or Gradle</td><td>Only if you build the application yourself (maven.apache.org).</td><td>Part 1</td></tr>
+</table>
+<p>Command-line tools used in the steps: <code>curl</code>, <code>openssl</code>, <code>unzip</code>, <code>awk</code>, <code>grep</code>, <code>sed</code>. They are installed by default on most Linux and macOS systems.</p>
+
+<h3>Network access (outbound)</h3>
+<table>
+<tr><th style="width:36%">From</th><th>To</th></tr>
+<tr><td>Application host</td><td>Capella on TCP 11207 and 18091 to 18096 (TLS)</td></tr>
+<tr><td>Machine Agent host</td><td>Capella on TCP 18091 (metrics) and 18093 (query service)</td></tr>
+<tr><td>Both hosts</td><td>The AppDynamics controller on TCP 443</td></tr>
+</table>
+
+<h3>Write these values down</h3>
+<table>
+<tr><th style="width:36%">Value</th><th>Example</th></tr>
+<tr><td>Capella connection string</td><td><code>couchbases://cb.xxxx.cloud.couchbase.com</code></td></tr>
+<tr><td>Database user and password</td><td><code>metrics-user</code> / (password)</td></tr>
+<tr><td>Controller host (bare hostname, no https://)</td><td><code>YOURNAME.saas.appdynamics.com</code></td></tr>
+<tr><td>Account Name and Access Key</td><td>from the License page</td></tr>
+<tr><td>Application, tier and node names</td><td><code>capella-demo</code>, <code>capella-client</code>, <code>node1</code>. Use the same three in both agents.</td></tr>
+</table>
+
+<h3>Suggested folder layout</h3>
+<pre class="short" data-lang="folders"><code>/opt/appdynamics/java-agent/javaagent.jar                 Java agent (Part 2)
+/opt/appdynamics/machine-agent/machineagent.jar           Machine Agent (Part 3)
+/opt/appdynamics/machine-agent/capella-root.pem           Capella root certificate
+/opt/appdynamics/machine-agent/monitors/CapellaMetrics/   monitor.xml, capella-metrics.sh, metrics.conf, capella.env</code></pre>
+
+</section><section class="part terms"><h2><span class="badge">?</span>Key terms in two minutes</h2>
+<table>
+<tr><th style="width:24%">Term</th><th>What it means here</th></tr>
+<tr><td>Application</td><td>The top-level container for one system you monitor. We use <code>capella-demo</code>. Set with <code>applicationName</code>.</td></tr>
+<tr><td>Tier</td><td>A group of nodes that do the same job. We use <code>capella-client</code> for your Java app. Set with <code>tierName</code>.</td></tr>
+<tr><td>Node</td><td>One monitored running process: one instance of your app, or one Machine Agent. We use <code>node1</code>. Set with <code>nodeName</code>. Both agents use the same application, tier and node names so their data lands together.</td></tr>
+<tr><td>Business transaction</td><td>One unit of work, such as a web request or your <code>doWork</code> method. Couchbase calls are recorded inside it.</td></tr>
+<tr><td>Backend</td><td>An external system your app calls. Capella appears as a Couchbase backend on the flow map.</td></tr>
+<tr><td>Custom metric</td><td>A number you report yourself. Here: any Capella metric, such as node CPU or resident ratio, reported by the Machine Agent.</td></tr>
+<tr><td>Health rule, action, policy</td><td>The rule watches a metric, the action does something (sends an email), the policy connects them.</td></tr>
+</table>
+<div class="warn"><b>Two different "nodes".</b> A <i>Capella node</i> is a database server. An <i>AppDynamics node</i> is a monitored process, here your app or the Machine Agent. Capella metrics describe the Capella servers, but they are stored under the AppDynamics node <code>node1</code>.</div>
+
+</section><section class="part p1"><h2 id="p1"><span class="badge">1</span>Connect your app to Capella over TLS</h2>
+<p>Capella uses a certificate chain rooted in a Couchbase CA that Java and curl do not trust by default.</p>
+<h3>1.1 Get the root certificate</h3>
+<p>Download the cluster's root certificate from the Capella UI (Connect section), or extract it from the server as below. Keep a copy next to your app and one at <code>/opt/appdynamics/machine-agent/capella-root.pem</code> (Part 3 uses it).</p>
+<pre class="short" data-lang="bash"><code>H=cb.xxxx.cloud.couchbase.com
+echo | openssl s_client <span class="f">-connect</span> <span class="s">"$H:18091"</span> <span class="f">-servername</span> <span class="s">"$H"</span> <span class="f">-showcerts</span> 2&gt;/dev/null \
+  | awk <span class="s">'/BEGIN CERT/{n++} {if(n)buf[n]=buf[n] $0 "\n"} END{printf "%s", buf[n]}'</span> &gt; capella-root.pem</code></pre>
+<h3>1.2 Test the connection</h3>
+<pre class="short" data-lang="bash"><code>curl <span class="f">--cacert</span> capella-root.pem <span class="f">-u</span> <span class="s">"$CB_USER:$CB_PASSWORD"</span> <span class="f">-o</span> /dev/null <span class="f">-w</span> <span class="s">"%{http_code}\n"</span> \
+  <span class="s">"https://$H:18091/pools"</span>      <span class="c"># expect 200</span></code></pre>
+<h3>1.3 Use it in your application</h3>
+<pre class="short" data-lang="xml"><code><span class="tg">&lt;dependency</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;groupId</span><span class="tg">&gt;</span>com.couchbase.client<span class="tg">&lt;/groupId</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;artifactId</span><span class="tg">&gt;</span>java-client<span class="tg">&lt;/artifactId</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;version</span><span class="tg">&gt;</span>3.7.5<span class="tg">&lt;/version</span><span class="tg">&gt;</span>
+<span class="tg">&lt;/dependency</span><span class="tg">&gt;</span></code></pre>
+<pre class="short" data-lang="java"><code>ClusterEnvironment env = ClusterEnvironment.builder()
+    .securityConfig(SecurityConfig.enableTls(true)
+        .trustCertificate(Paths.get(<span class="s">"capella-root.pem"</span>)))
+    .build();
+Cluster cluster = Cluster.connect(<span class="s">"couchbases://cb.xxxx.cloud.couchbase.com"</span>,
+    ClusterOptions.clusterOptions(user, password).environment(env));</code></pre>
+<p class="check">Done when: your app connects and reads or writes a document.</p>
+
+</section><section class="part p2"><h2 id="p2"><span class="badge">2</span>See your app's Capella calls in AppDynamics</h2>
+<h3>2.1 Attach the Java agent</h3>
+<p>Unzip the Java Agent ZIP, then start your app with these flags:</p>
+<pre class="short" data-lang="bash"><code>unzip AppServerAgent-*.zip <span class="f">-d</span> /opt/appdynamics/java-agent</code></pre>
+<pre class="short" data-lang="bash"><code>java <span class="f">-javaagent:/opt/appdynamics/java-agent/javaagent.jar</span> \
+  <span class="f">-Dappdynamics.controller.hostName=YOURNAME.saas.appdynamics.com</span> \
+  <span class="f">-Dappdynamics.controller.port=443</span> \
+  <span class="f">-Dappdynamics.controller.ssl.enabled=true</span> \
+  <span class="f">-Dappdynamics.agent.accountName=ACCOUNT_NAME</span> \
+  <span class="f">-Dappdynamics.agent.accountAccessKey=ACCESS_KEY</span> \
+  <span class="f">-Dappdynamics.agent.applicationName=capella-demo</span> \
+  <span class="f">-Dappdynamics.agent.tierName=capella-client</span> \
+  <span class="f">-Dappdynamics.agent.nodeName=node1</span> \
+  <span class="f">-jar</span> your-app.jar</code></pre>
+<div class="warn"><b>Common mistakes.</b> The host must be the bare hostname (no <code>https://</code>). The account name and key come from the License page. A <code>401 Unauthorized</code> in <code>java-agent/ver*/logs/*/agent.log</code> means one of them is wrong.</div>
+<p class="check">Done when: the agent log shows <code>Registration information received</code>, and the application appears under Applications in the controller.</p>
+<h3>2.2 Standalone programs only: create a business transaction</h3>
+<p>AppDynamics only records Couchbase calls inside a business transaction. Web applications get one automatically from each request. A plain Java program has no entry point, so the application shows 0 calls until you define one. Put the work in one method:</p>
+<pre class="short" data-lang="java"><code><span class="k">public</span> <span class="k">static</span> <span class="k">void</span> doWork(Cluster cluster, Collection col, int i) {   <span class="c">// the unit of work</span>
+    col.upsert(<span class="s">"doc::"</span> + i, JsonObject.create().put(<span class="s">"i"</span>, i));
+    col.get(<span class="s">"doc::"</span> + i);
+}</code></pre>
+<p>Then in the controller: <b>Applications, your app, Configuration, Instrumentation, Transaction Detection, Rules, Add</b>:</p>
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Rule type</td><td>Custom Match Rule</td></tr>
+<tr><td>Agent type, entry point</td><td>Java, POJO</td></tr>
+<tr><td>Name</td><td><code>capella-doWork</code></td></tr>
+<tr><td>Scope</td><td>Default Scope</td></tr>
+<tr><td>Class name</td><td>equals your class, for example <code>demo.CapellaLoad</code></td></tr>
+<tr><td>Method name</td><td>equals <code>doWork</code></td></tr>
+</table>
+<p>Restart the app. Once traffic is flowing, open the business transaction: the <b>Flow Map</b> shows your tier pointing to Couchbase backends, with calls per minute, response time and errors.</p>
+<p class="check">Done when: the Flow Map shows a Couchbase backend.</p>
+
+</section><section class="part p3"><h2 id="p3"><span class="badge">3</span>Report Capella metrics to AppDynamics</h2>
+<p>Capella publishes its server metrics on a Prometheus-format endpoint. A small script on a Machine Agent reads it every minute and reports the numbers you choose to AppDynamics as <b>custom metrics</b>. Which numbers is decided by one list, <code>metrics.conf</code>. <b>CPU is the first entry, used to prove the setup works.</b> Part 6 shows how to add any other metric by adding a line.</p>
+<h3>3.1 Check that the metrics endpoint works</h3>
+<pre class="short" data-lang="bash"><code>curl <span class="f">-s</span> <span class="f">--cacert</span> capella-root.pem <span class="f">-u</span> <span class="s">"$CB_USER:$CB_PASSWORD"</span> <span class="s">"https://$H:18091/metrics"</span> \
+  | grep <span class="s">'^sys_cpu_utilization_rate'</span>
+<span class="c"># sys_cpu_utilization_rate{category="system",instance="ns_server",job="general"} 8.6</span></code></pre>
+<p>Every line in this output is a metric you can report. The number at the end of the line is its value. Your public hostname answers from <b>one node only</b>; the script below reads every node.</p>
+<h3>3.2 Install the Machine Agent and the Capella monitor</h3>
+<pre class="short" data-lang="bash"><code>unzip MachineAgent-*.zip <span class="f">-d</span> /opt/appdynamics/machine-agent
+mkdir <span class="f">-p</span> /opt/appdynamics/machine-agent/monitors/CapellaMetrics
+<span class="c"># save monitor.xml, capella-metrics.sh and metrics.conf (below) in that folder, then:</span>
+chmod +x /opt/appdynamics/machine-agent/monitors/CapellaMetrics/capella-metrics.sh</code></pre>
+<p><b>monitor.xml</b> tells the Machine Agent to run the script every 60 seconds:</p>
+<pre class="long" data-lang="xml"><code><span class="tg">&lt;monitor</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;name</span><span class="tg">&gt;</span>CapellaMetrics<span class="tg">&lt;/name</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;type</span><span class="tg">&gt;</span>managed<span class="tg">&lt;/type</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;description</span><span class="tg">&gt;</span>Reports Capella metrics from the Prometheus /metrics endpoint<span class="tg">&lt;/description</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;monitor-configuration</span><span class="tg">&gt;</span><span class="tg">&lt;/monitor-configuration</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;monitor-run-task</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;execution-style</span><span class="tg">&gt;</span>periodic<span class="tg">&lt;/execution-style</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;execution-frequency-in-seconds</span><span class="tg">&gt;</span>60<span class="tg">&lt;/execution-frequency-in-seconds</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;name</span><span class="tg">&gt;</span>Capella Metrics<span class="tg">&lt;/name</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;display-name</span><span class="tg">&gt;</span>Capella Metrics<span class="tg">&lt;/display-name</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;description</span><span class="tg">&gt;</span>Capella metrics<span class="tg">&lt;/description</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;type</span><span class="tg">&gt;</span>executable<span class="tg">&lt;/type</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;execution-timeout-in-secs</span><span class="tg">&gt;</span>60<span class="tg">&lt;/execution-timeout-in-secs</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;task-arguments</span><span class="tg">&gt;</span><span class="tg">&lt;/task-arguments</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;executable-task</span><span class="tg">&gt;</span>
+      <span class="tg">&lt;type</span><span class="tg">&gt;</span>file<span class="tg">&lt;/type</span><span class="tg">&gt;</span>
+      <span class="tg">&lt;file</span> os-type=<span class="s">"linux"</span><span class="tg">&gt;</span>capella-metrics.sh<span class="tg">&lt;/file</span><span class="tg">&gt;</span>
+      <span class="tg">&lt;file</span> os-type=<span class="s">"mac"</span><span class="tg">&gt;</span>capella-metrics.sh<span class="tg">&lt;/file</span><span class="tg">&gt;</span>
+    <span class="tg">&lt;/executable-task</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;/monitor-run-task</span><span class="tg">&gt;</span>
+<span class="tg">&lt;/monitor</span><span class="tg">&gt;</span></code></pre>
+<p><b>metrics.conf</b> is the list of metrics to report, one per line (format explained in Part 6). It starts with CPU:</p>
+<pre class="short" data-lang="config"><code><span class="c"># Metrics to report to AppDynamics. One per line:</span>
+<span class="c">#   Display name | Prometheus metric name | how to combine nodes: max, min, avg or sum | optional filter</span>
+<span class="c"># Lines starting with # are ignored.</span>
+CPU Utilization %<span class="pp">|</span>sys_cpu_utilization_rate<span class="pp">|</span>max</code></pre>
+<p><b>capella-metrics.sh</b> lists every node, downloads each node's metrics and prints one custom-metric line for every entry in <code>metrics.conf</code>:</p>
+<pre class="long" data-lang="bash"><code><span class="c">#!/usr/bin/env bash</span>
+<span class="c"># AppDynamics Machine Agent script monitor: reports Capella metrics as custom metrics.</span>
+<span class="c"># Which metrics to report is listed in metrics.conf (one line per metric).</span>
+<span class="c"># The Machine Agent runs scripts with an empty environment, so credentials come from capella.env</span>
+<span class="c"># (written by your start script, deleted on exit).</span>
+DIR=<span class="s">"$(cd "</span>$(dirname <span class="s">"$0"</span>)<span class="s">" &amp;&amp; pwd)"</span>
+[ <span class="f">-f</span> <span class="s">"$DIR/capella.env"</span> ] &amp;&amp; . <span class="s">"$DIR/capella.env"</span>
+H=<span class="s">"${CB_CONNSTR#couchbases://}"</span>; H=<span class="s">"${H%%/*}"</span>
+CA=<span class="s">"${CAPELLA_CA_PEM:-$DIR/../../../capella-root.pem}"</span>
+CONF=<span class="s">"$DIR/metrics.conf"</span>
+[ <span class="f">-f</span> <span class="s">"$CA"</span> ] &amp;&amp; [ <span class="f">-f</span> <span class="s">"$CONF"</span> ] || exit 0
+CACHE=<span class="s">"$DIR/capella.nodes"</span>   <span class="c"># node list cache, used when the query service is too busy to answer</span>
+
+<span class="c"># 1) node list: from system:nodes, fall back to the cached list, then to the public hostname alone</span>
+RESP=$(curl <span class="f">-sS</span> <span class="f">--max-time</span> 15 <span class="f">--cacert</span> <span class="s">"$CA"</span> <span class="f">-u</span> <span class="s">"$CB_USER:$CB_PASSWORD"</span> \
+  <span class="f">--data-urlencode</span> <span class="s">'statement=SELECT name FROM system:nodes'</span> <span class="s">"https://$H:18093/query/service"</span> 2&gt;/dev/null)
+NODES=$(printf <span class="s">'%s'</span> <span class="s">"$RESP"</span> | grep <span class="f">-o</span> <span class="s">'"name": *"[^"]*"'</span> | sed <span class="f">-E</span> <span class="s">'s/"name": *"([^":]*)(:[0-9]+)?"/\1/'</span> | sort <span class="f">-u)</span>
+if [ <span class="f">-n</span> <span class="s">"$NODES"</span> ]; then printf <span class="s">'%s\n'</span> <span class="s">"$NODES"</span> &gt; <span class="s">"$CACHE"</span>; else NODES=$(cat <span class="s">"$CACHE"</span> 2&gt;/dev/null); fi
+[ <span class="f">-n</span> <span class="s">"$NODES"</span> ] || NODES=<span class="s">"$H"</span>
+
+<span class="c"># 2) download /metrics from every node once</span>
+TMP=$(mktemp <span class="f">-d);</span> trap <span class="s">'rm -rf "$TMP"'</span> EXIT
+i=0
+for N in <span class="v">$NODES</span>; do
+  curl <span class="f">-sS</span> <span class="f">--max-time</span> 15 <span class="f">--cacert</span> <span class="s">"$CA"</span> <span class="f">-u</span> <span class="s">"$CB_USER:$CB_PASSWORD"</span> <span class="s">"https://$N:18091/metrics"</span> <span class="f">-o</span> <span class="s">"$TMP/$i"</span> 2&gt;/dev/null
+  i=$((i+1))
+done
+
+<span class="c"># 3) one output line per metric in metrics.conf:  Display name | metric name | max/min/avg/sum | optional filter</span>
+grep <span class="f">-v</span> <span class="s">'^[[:space:]]*#'</span> <span class="s">"$CONF"</span> | while IFS=<span class="s">'|'</span> read <span class="f">-r</span> LABEL METRIC AGG FILTER; do
+  [ <span class="f">-n</span> <span class="s">"$LABEL"</span> ] &amp;&amp; [ <span class="f">-n</span> <span class="s">"$METRIC"</span> ] || continue
+  VAL=$(cat <span class="s">"$TMP"</span>/* 2&gt;/dev/null | awk <span class="f">-v</span> m=<span class="s">"$METRIC"</span> <span class="f">-v</span> agg=<span class="s">"${AGG:-max}"</span> <span class="f">-v</span> f=<span class="s">"$FILTER"</span> '
+    index($0, m) == 1 &amp;&amp; substr($0, length(m) + 1, 1) ~ /[{ ]/ &amp;&amp; (f == <span class="s">""</span> || index($0, f) &gt; 0) {
+      v = <span class="v">$NF</span> + 0; n++; sum += v
+      if (n == 1 || v &gt; mx) mx = v
+      if (n == 1 || v &lt; mn) mn = v
+    }
+    END { if (n == 0) exit
+          r = (agg == <span class="s">"min"</span>) ? mn : (agg == <span class="s">"sum"</span>) ? sum : (agg == <span class="s">"avg"</span>) ? sum / n : mx
+          printf <span class="s">"%.0f"</span>, r }')
+  [ <span class="f">-n</span> <span class="s">"$VAL"</span> ] &amp;&amp; echo <span class="s">"name=Custom Metrics|Capella|$LABEL,value=$VAL,aggregator=OBSERVATION,time-rollup=CURRENT,cluster-rollup=INDIVIDUAL"</span>
+done
+exit 0</code></pre>
+<h3>3.3 Give the script its credentials</h3>
+<p>The Machine Agent runs scripts with an <b>empty environment</b>, so exported variables are not visible. Put the credentials in a file next to the script and restrict it:</p>
+<pre class="short" data-lang="env"><code>CB_CONNSTR=<span class="s">'couchbases://cb.xxxx.cloud.couchbase.com'</span>
+CB_USER=<span class="s">'metrics-user'</span>
+CB_PASSWORD=<span class="s">'the-password'</span>
+CAPELLA_CA_PEM=<span class="s">'/opt/appdynamics/machine-agent/capella-root.pem'</span></code></pre>
+<pre class="short" data-lang="bash"><code>chmod 600 /opt/appdynamics/machine-agent/monitors/CapellaMetrics/capella.env</code></pre>
+<h3>3.4 Test the script, then start the Machine Agent</h3>
+<pre class="short" data-lang="bash"><code>/opt/appdynamics/machine-agent/monitors/CapellaMetrics/capella-metrics.sh
+<span class="c"># name=Custom Metrics|Capella|CPU Utilization %,value=9,aggregator=OBSERVATION,time-rollup=CURRENT,cluster-rollup=INDIVIDUAL</span></code></pre>
+<p>Start the Machine Agent. Use the <b>same application, tier and node names</b> as the Java agent so the metrics land under your application:</p>
+<pre class="short" data-lang="bash"><code>java <span class="f">-Dappdynamics.controller.hostName=YOURNAME.saas.appdynamics.com</span> \
+  <span class="f">-Dappdynamics.controller.port=443</span> <span class="f">-Dappdynamics.controller.ssl.enabled=true</span> \
+  <span class="f">-Dappdynamics.agent.accountName=ACCOUNT_NAME</span> \
+  <span class="f">-Dappdynamics.agent.accountAccessKey=ACCESS_KEY</span> \
+  <span class="f">-Dappdynamics.agent.applicationName=capella-demo</span> \
+  <span class="f">-Dappdynamics.agent.tierName=capella-client</span> \
+  <span class="f">-Dappdynamics.agent.nodeName=node1</span> \
+  <span class="f">-Dappdynamics.sim.enabled=false</span> \
+  <span class="f">-jar</span> /opt/appdynamics/machine-agent/machineagent.jar</code></pre>
+<p>Open <b>Metric Browser</b> (left menu, More). Every line of <code>metrics.conf</code> appears here, under <code>Custom Metrics | Capella</code>:</p>
+<p><code>Application Infrastructure Performance | capella-client | Individual Nodes | node1 | Custom Metrics | Capella | CPU Utilization %</code></p>
+<p class="check">Done when: the graph shows a CPU value.</p>
+
+</section><section class="part p4"><h2 id="p4"><span class="badge">4</span>Alert on a metric</h2>
+<p>Three objects work together: an <b>action</b> (what to do), a <b>health rule</b> (what to watch) and a <b>policy</b> (connects them). Everything is under <b>Alert &amp; Respond</b> in the left menu of your application. The steps are the same for every metric; we use <b>CPU above 50%</b> as the worked example.</p>
+
+<h3>4.1 Turn on email sending</h3>
+<ol>
+  <li>Open <b>Alert &amp; Respond, Email / SMS Configuration</b>.</li>
+  <li>Tick <b>Enable Email / SMS Notifications</b>.</li>
+  <li>Keep the default SMTP host and port. Enter a <b>From Address</b> (for example your own address). Leave authentication off.</li>
+  <li>Under <b>Test SMTP Configuration</b>, enter your address and click <b>Send</b>. Confirm the test mail arrives, then click <b>Save</b>.</li>
+</ol>
+
+<h3>4.2 Create the email action</h3>
+<ol>
+  <li>Open <b>Alert &amp; Respond, Actions</b>, then click <b>Create</b>.</li>
+  <li>Choose <b>Send an Email</b> and click OK.</li>
+  <li>Name it <code>email-me</code>. Enter the recipients in <b>To</b> (add only the people who should be alerted). Optionally add a note.</li>
+  <li><b>Save.</b> The action appears in the list.</li>
+</ol>
+
+<h3>4.3 Create a health rule for a metric</h3>
+<ol>
+  <li>Open <b>Alert &amp; Respond, Health Rules</b>, then click <b>+</b>.</li>
+  <li><b>Set the rule type first</b> (Affected Entities tab), because changing it later resets the conditions you entered.</li>
+</ol>
+<table>
+<tr><th style="width:24%">Tab</th><th>Setting</th></tr>
+<tr><td>Overview</td><td>A name that says what it watches, for example <code>Capella CPU &gt; 50</code>. Enabled ticked. Use data from last <b>5</b> min. Wait time after violation <b>5</b> min.</td></tr>
+<tr><td>Affected Entities</td><td>Health rule type: <b>Tier / Node Health - Hardware, JVM, CLR</b>. What does it affect: <b>Nodes</b>. Choose <b>These specified Nodes</b> and move your node (for example <code>node1</code>) into Selected.</td></tr>
+<tr><td>Critical Criteria</td><td>Click <b>Add Condition</b>. Set <b>Single Metric</b>, <b>Value</b>. Click <b>Select a Metric</b>, choose <b>Specify a Relative Metric Path</b> and type <code>Custom Metrics|Capella|&lt;Display name&gt;</code>, using the display name from <code>metrics.conf</code> (for CPU: <code>Custom Metrics|Capella|CPU Utilization %</code>). Then <b>Select Metric</b>. Choose the comparison and value (see the table below). Leave "Trigger only when violation occurs" unticked. Keep <b>Any Node</b>. "No data" can stay on <b>Unknown</b>.</td></tr>
+<tr><td>Warning Criteria</td><td>Optional. Repeat with a milder value for an early warning.</td></tr>
+</table>
+<p>Click <b>Save</b> (bottom right of the dialog). Examples of conditions, one rule each:</p>
+<table>
+<tr><th style="width:26%">What to watch</th><th>Display name in metrics.conf</th><th style="width:20%">Comparison</th><th style="width:18%">Example value</th></tr>
+<tr><td>Node CPU too high</td><td><code>CPU Utilization %</code></td><td>&gt; Specific Value</td><td>50</td></tr>
+<tr><td>Data not in memory</td><td><code>Resident Ratio %</code></td><td>&lt; Specific Value</td><td>90</td></tr>
+<tr><td>Any other metric</td><td>the name you gave it</td><td>&gt; or &lt;</td><td>your limit</td></tr>
+</table>
+<div class="note"><b>Nodes or Tiers?</b> Choose <b>Nodes</b>, because the custom metrics are stored under the node (<code>Individual Nodes | node1 | Custom Metrics | Capella</code> in Metric Browser). Choose <b>Tiers</b> only for metrics stored at tier level, and then use <b>The Tier Average</b> instead of Any Node. If a rule never fires, check that the entity you picked is where Metric Browser shows the metric.</div>
+<div class="note">The metric tree in this dialog lists only the standard hardware metrics. Your custom metrics do not appear in it, which is why you use the relative path.</div>
+
+<h3>4.4 Create the policy (once, for all rules)</h3>
+<ol>
+  <li>Open <b>Alert &amp; Respond, Policies</b>, then click <b>+</b>.</li>
+  <li><b>Trigger tab:</b> name it <code>capella-alerts</code>, keep Enabled ticked, expand <b>Health Rule Violation Events</b> and tick <b>Started - Warning</b> and <b>Started - Critical</b>.</li>
+  <li><b>Health Rule Scope tab:</b> choose <b>These Health Rules</b>, click <b>+</b> and add your rule (for example <code>Capella CPU &gt; 50</code>). Add every new rule here later.</li>
+  <li><b>Object Scope tab:</b> leave the default (any object).</li>
+  <li><b>Actions tab:</b> click <b>+</b> and choose <code>email-me</code>.</li>
+  <li><b>Save.</b> The policy lists your rules and your action.</li>
+</ol>
+<p class="check">Done when: the policy is saved, the rule is enabled, and the email test in 4.1 arrived.</p>
+
+<h3>4.5 Optional: alert on your app's own errors and latency</h3>
+<p>The same three objects work for the application view from Part 2. Create two more health rules the same way (4.3), with type <b>Business Transaction Performance</b>, affecting your business transaction (for example <code>capella-doWork</code>), then add both to the policy under Health Rule Scope.</p>
+<table>
+<tr><th style="width:34%">Rule name</th><th>Critical condition</th></tr>
+<tr><td><code>capella-doWork errors</code></td><td><b>Errors per Minute</b> &gt; Specific Value <b>1</b></td></tr>
+<tr><td><code>capella-doWork slow</code></td><td><b>Average Response Time (ms)</b> &gt; Specific Value <b>300</b> (adjust to your normal latency)</td></tr>
+</table>
+<div class="note">Errors that your code catches itself are not counted. AppDynamics counts an error when an exception leaves the business transaction method.</div>
+
+</section><section class="part p5"><h2 id="p5"><span class="badge">5</span>Test the alert</h2>
+<p>Test with CPU, because it is the easiest metric to push up. The same method works for any metric.</p>
+<ol>
+  <li><b>Quick test first.</b> Temporarily set the rule value to <b>5</b>. Normal idle CPU is above that, so the alert fires without any load. For faster feedback you can also set the data window and wait time to 1 minute while testing, then return them to 5. For a metric where lower is worse, set the limit on the other side of its current value instead.</li>
+  <li><b>Then generate real load.</b> Make sure the Machine Agent is running, then run the load script. It runs CPU-heavy queries and reads or writes no data. It slows other queries on that cluster while it runs, so use a test cluster or a quiet time:</li>
+</ol>
+<pre class="short" data-lang="bash"><code><span class="c"># Optional load test. Starts 24 parallel CPU-heavy queries for 5 minutes (no data is read or written).</span>
+for i in $(seq 1 24); do
+  ( while true; do
+      curl <span class="f">-s</span> <span class="f">--cacert</span> capella-root.pem <span class="f">-u</span> <span class="s">"$CB_USER:$CB_PASSWORD"</span> \
+        <span class="f">--data-urlencode</span> <span class="s">'statement=SELECT SUM(x*x) FROM ARRAY_RANGE(0,3000000) AS x'</span> \
+        <span class="s">"https://$H:18093/query/service"</span> &gt; /dev/null
+    done ) &amp;
+done
+sleep 300; kill $(jobs <span class="f">-p)</span></code></pre>
+<p>If CPU stays low, increase the number of parallel loops.</p>
+<ol start="3">
+  <li>Watch <b>Metric Browser</b> (the metric moves), then <b>Alert &amp; Respond, Health Rules</b> or the application's <b>Events</b> for <i>Health Rule Violation Started - Critical</i>, then your inbox.</li>
+  <li>Set the value back to your real limit (for CPU, <b>50</b>).</li>
+</ol>
+<div class="note"><b>One alert per violation.</b> While the metric stays past the threshold the violation stays open, and AppDynamics does not send a new <i>Started</i> alert. If you re-test, stop the load, wait for the metric to recover and the violation to clear (the rule returns to healthy), then run the load again.</div>
+
+</section><section class="part p6"><h2 id="p6"><span class="badge">6</span>Add more metrics</h2>
+<p>CPU was the test. To report any other Capella metric, you only edit <code>metrics.conf</code>. No restart is needed: the script reads the file every minute.</p>
+<ol>
+  <li><b>Find the metric name.</b> Search the endpoint output by keyword, for example <code>resident</code>, <code>memory</code> or <code>disk</code>:</li>
+</ol>
+<pre class="short" data-lang="bash"><code><span class="c"># 1. Find the metric you want. Search the endpoint output by keyword, for example "resident":</span>
+curl <span class="f">-s</span> <span class="f">--cacert</span> capella-root.pem <span class="f">-u</span> <span class="s">"$CB_USER:$CB_PASSWORD"</span> <span class="s">"https://$H:18091/metrics"</span> \
+  | grep <span class="f">-i</span> resident | grep <span class="f">-v</span> <span class="s">'^#'</span> | head</code></pre>
+<ol start="2">
+  <li><b>Add one line</b> to <code>metrics.conf</code> with four fields separated by <code>|</code>:</li>
+</ol>
+<table>
+<tr><th style="width:22%">Field</th><th>Meaning</th></tr>
+<tr><td>1. Display name</td><td>The name you will see in AppDynamics and use in the health rule, for example <code>Resident Ratio %</code>.</td></tr>
+<tr><td>2. Metric name</td><td>The exact name from step 1, for example the text before <code>{</code> on the line you found.</td></tr>
+<tr><td>3. Combine nodes</td><td><code>max</code> (worst node when high is bad, like CPU), <code>min</code> (worst node when low is bad, like a ratio), <code>avg</code> or <code>sum</code>.</td></tr>
+<tr><td>4. Filter (optional)</td><td>Text that must appear on the line, to report one bucket only, for example <code>bucket="travel-sample"</code>.</td></tr>
+</table>
+<pre class="short" data-lang="config"><code><span class="c"># Display name | metric name | combine nodes | optional filter</span>
+CPU Utilization %<span class="pp">|</span>sys_cpu_utilization_rate<span class="pp">|</span>max
+Resident Ratio %<span class="pp">|</span>REPLACE_WITH_METRIC_NAME<span class="pp">|</span>min
+Resident Ratio travel-sample %<span class="pp">|</span>REPLACE_WITH_METRIC_NAME<span class="pp">|</span>min<span class="pp">|</span>bucket=<span class="s">"travel-sample"</span></code></pre>
+<ol start="3">
+  <li><b>Check it.</b> After a minute the new display name appears in Metric Browser under <code>Custom Metrics | Capella</code>.</li>
+  <li><b>Alert on it.</b> Create a health rule as in 4.3 using that display name in the relative path, choose the comparison, and add the rule to the <code>capella-alerts</code> policy (4.4).</li>
+</ol>
+<div class="note">The metric name must match exactly. If a line produces nothing, run the search again and copy the name from the output. Metrics that exist once per bucket carry a <code>bucket</code> label on every line; without a filter the script combines all buckets into one value.</div>
+
+</section><section class="part ts"><h2 id="ts"><span class="badge">!</span>Troubleshooting</h2>
+<table>
+<tr><th style="width:30%">Symptom</th><th style="width:30%">Cause</th><th>Fix</th></tr>
+<tr><td>curl or Java: <i>self signed certificate in certificate chain</i></td><td>The Capella root CA is not trusted by default.</td><td>Use <code>--cacert capella-root.pem</code> and the SDK <code>trustCertificate</code> setting.</td></tr><tr><td>Agent log: <i>401 Unauthorized</i></td><td>Wrong account name or access key.</td><td>Copy both from the controller: gear, License, Account. Re-type the key; check for stray spaces.</td></tr><tr><td>Agent log shows <code>hostName=https://...</code></td><td>Scheme included in the controller host.</td><td>Use the bare hostname, no <code>https://</code>.</td></tr><tr><td>Application visible, 0 calls, no Couchbase backend</td><td>A plain Java program has no business transaction entry point.</td><td>Add the POJO rule in Part 2 (not needed for web apps).</td></tr><tr><td>Metrics never appear</td><td>The monitor script runs with an empty environment, so it cannot see exported variables.</td><td>Put the credentials in <code>capella.env</code> next to the script (Part 3).</td></tr><tr><td>One metric is missing</td><td>The metric name in <code>metrics.conf</code> does not match exactly.</td><td>Search the endpoint again (Part 6) and copy the name from the output.</td></tr><tr><td>A value in AppDynamics is lower or higher than Capella shows</td><td>The public hostname answers <code>/metrics</code> from one node only.</td><td>Use the script in this guide: it lists every node and combines them with max, min, avg or sum.</td></tr><tr><td>Health rule never fires</td><td>Wrong entity or metric path.</td><td>Affect the node, choose the metric by relative path, and set "no data" to Critical while testing.</td></tr><tr><td>Alert emailed once, then nothing more</td><td>A violation stays open while CPU stays high, and the policy triggers on <i>Started</i> only.</td><td>Expected. To hear again, add <i>Violation Continues</i> to the policy trigger, or let the violation clear and re-test.</td></tr><tr><td>Alert emails go to the wrong people</td><td>Extra recipients on the email action.</td><td>Edit the action under Alert &amp; Respond, Actions.</td></tr>
+</table>
+
+</section><section class="part good"><h2><span class="badge">i</span>Good to know</h2>
+<ul>
+  <li><b>Security.</b> Keep the DB password and AppDynamics key out of source control. <code>capella.env</code> must be readable only by the Machine Agent user. Rotate any key that was shown on a screen or shared.</li>
+  <li><b>Scope.</b> This alerts on metrics read from Capella's metrics endpoint, with limits you choose. Capella also has its own built-in alerts with fixed levels (see Capella's Alert Reference).</li>
+  <li><b>Not covered.</b> Containers and Kubernetes, and dashboards.</li>
+  <li><b>macOS only.</b> The Machine Agent's built-in Sigar hardware monitor may trigger a Gatekeeper prompt. Click Done and disable that monitor (<code>monitors/JavaHardwareMonitor/monitor.xml</code>, set <code>enabled</code> to <code>false</code>). Not needed on Linux.</li>
+</ul>
+
+</section><footer><b>Capella + AppDynamics setup guide</b><br>Written for Java agent 26.9, Machine Agent 26.8 and Couchbase Java SDK 3.7.5. Menu labels in the AppDynamics UI can differ slightly between versions.</footer>
+</div>
+</body></html>
